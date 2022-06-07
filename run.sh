@@ -17,7 +17,15 @@ function main() {
 }
 
 function _test() {
-  echo "--- running test suite ---"
+  echo "--- test suite ---"
+  (it "should only run in minikube"
+    expected="minikube"
+
+    actual=$(kubectl config current-context)
+
+    expect_equals "$expected" "$actual"
+  )
+
   (sandbox
     (when "deploying the registry"
       deploy &>/dev/null
@@ -47,12 +55,15 @@ function teardown() {
 function help() {
   cat <<EOM
 USAGE
-  ./${PROG} [ setup ]
+  ./${PROG} [ setup | deploy | test ]
 
 COMMANDS
-  setup     setup the test environment
-  deploy    deploy the registry
+  setup     setup the k8s registry environment
+  deploy    deploys the registry to k8s
   test      run the test suite against the registry
+
+NOTE
+Your current kubectl context is "$(kubectl config current-context)"
 EOM
 }
 
