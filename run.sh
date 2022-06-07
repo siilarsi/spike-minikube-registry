@@ -5,7 +5,7 @@ PROG=${0##*/}
 
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck "$PROG"
-  is_installed kubectl && is_installed minikube || exit 1
+  is_installed kubectl && is_installed minikube && is_installed jq || exit 1
 
   case "${1-}" in
     "setup") setup;;
@@ -42,6 +42,13 @@ function _test() {
         expected="200"
 
         actual=$(get_http_status_of http://registry.test/)
+
+        expect_equals "$expected" "$actual"
+      )
+      (it "should not contain any repositories"
+        expected="0"
+
+        actual=$(get_body_of http://registry.test/v2/_catalog | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"
       )
@@ -95,6 +102,10 @@ function get_http_status_of() {
     # the sed command is an ugly hack until I figure how to get the http_code of last request only
 }
 
+function get_body_of() {
+  url=${1?please provide the url a first argument}
+  curl -s --resolve registry.test:80:"$(minikube ip)" "$url"
+}
 
 function sandbox() {
   trap "teardown &>/dev/null" EXIT
