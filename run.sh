@@ -17,13 +17,22 @@ function main() {
 }
 
 function _test() {
-  echo "--- test suite ---"
-  (it "should only run in minikube"
-    expected="minikube"
+  (when "running the test suite"
+    (it "requires that kubectl is set to the right context"
+      expected="minikube"
 
-    actual=$(kubectl config current-context)
+      actual=$(kubectl config current-context)
 
-    expect_equals "$expected" "$actual"
+      expect_equals "$expected" "$actual"
+    )
+    (it "requires that minikube is running"
+      trap 'if [ $? != 0 ]; then echo "--FAILED minikube is not running"; fi' EXIT
+      minikube status 1> /dev/null
+    )
+    (it "requires that the ingress addon is enabled"
+      trap 'if [ $? != 0 ]; then echo "--FAILED the ingress addon is disabled"; fi' EXIT
+      minikube addons list | grep -e 'ingress.*enabled' 1>/dev/null
+    )
   )
 
   (sandbox
