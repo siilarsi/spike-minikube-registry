@@ -109,7 +109,7 @@ function get_body_of() {
 
 function sandbox() {
   trap "teardown &>/dev/null" EXIT
-  setup &>/dev/null
+  ( setup || ( teardown && setup ) ) &>/dev/null
 }
 
 function when() {
