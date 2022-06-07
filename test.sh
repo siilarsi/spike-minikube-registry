@@ -4,10 +4,23 @@ set -euxo pipefail
 PROG=${0##*/}
 
 function main() {
-  is_installed kubectl || exit 1
   is_installed shellcheck 2>/dev/null && shellcheck "$PROG"
+  is_installed kubectl || exit 1
 
-  kubectl create namespace spike
+  case "${1-}" in
+    "setup") kubectl create namespace spike;;
+    *) help;;
+  esac
+}
+
+function help() {
+  cat <<EOM
+USAGE
+  ./${PROG} [ setup ]
+
+COMMANDS
+  setup     setup the test environment
+EOM
 }
 
 # https://stackoverflow.com/questions/592620/how-can-i-check-if-a-program-exists-from-a-bash-script
