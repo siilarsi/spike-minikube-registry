@@ -5,12 +5,18 @@ PROG=${0##*/}
 
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck "$PROG"
-  is_installed kubectl || exit 1
+  is_installed kubectl && is_installed minikube || exit 1
 
   case "${1-}" in
     "setup") kubectl create namespace spike;;
+    "deploy") kubectl apply -f templates/;;
+    "test") test "${2-:@}";;
     *) help;;
   esac
+}
+
+function test() {
+  curl -s -w "%{http_code}" --resolve registry.test:80:"$(minikube ip)" http://registry.test/
 }
 
 function help() {
@@ -20,6 +26,8 @@ USAGE
 
 COMMANDS
   setup     setup the test environment
+  deploy    deploy the registry
+  test      run the test suite against the registry
 EOM
 }
 
