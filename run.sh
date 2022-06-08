@@ -5,7 +5,6 @@ PROG=${0##*/}
 
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck "$PROG"
-  is_installed kubectl && is_installed minikube && is_installed jq || exit 1
 
   case "${1-}" in
     "setup") setup;;
@@ -18,12 +17,12 @@ function main() {
 
 function _test() {
   (when "running the test suite"
+    (it "requires that the used tools are installed"
+      is_installed kubectl && is_installed minikube && is_installed jq
+      expect_equals $? 0
+    )
     (it "requires that kubectl is set to the right context"
-      expected="minikube"
-
-      actual=$(kubectl config current-context)
-
-      expect_equals "$expected" "$actual"
+      expect_equals "minikube" "$(kubectl config current-context)"
     )
     (it "requires that minikube is running"
       trap 'if [ $? != 0 ]; then echo "--FAILED minikube is not running"; fi' EXIT
@@ -57,14 +56,17 @@ function _test() {
 }
 
 function deploy() {
+  is_installed kubectl || exit 1
   kubectl apply -f templates/
 }
 
 function setup() {
+  is_installed kubectl || exit 1
   kubectl create namespace spike
 }
 
 function teardown() {
+  is_installed kubectl || exit 1
   kubectl delete namespace spike
 }
 
