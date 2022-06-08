@@ -4,9 +4,14 @@ set -euo pipefail
 PROG=${0##*/}
 SOURCE_REGISTRY="localhost:5000"
 DESTINATION_REGISTRY="registry.test"
+# https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
+
+# shellcheck source=./test_utils.sh
+source "${SCRIPT_DIR}/test_utils.sh"
 
 function main() {
-  is_installed shellcheck 2>/dev/null && shellcheck "$PROG"
+  is_installed shellcheck 2>/dev/null && shellcheck -x "$PROG"
 
   case "${1-}" in
     "setup") setup;;
@@ -80,19 +85,18 @@ function _curl() {
   curl -s --resolve "$DESTINATION_REGISTRY":80:"$(minikube ip)" "$@"
 }
 
+# https://stackoverflow.com/questions/42873285/curl-retry-mechanism
+function get_http_status_of() {
+  url=${1?please provide the url a first argument}
+  _curl --retry-all-errors --retry 5 --retry-delay 0 \
+    --max-time 2 --retry-max-time 15 -w "%{http_code}" \
+    -O /dev/null "$url" | sed -e 's/0*//'
+    # the sed command is an ugly hack until I figure how to get the http_code of last request only
+}
+
 function deploy() {
   is_installed kubectl || exit 1
   kubectl apply -f templates/
-}
-
-function setup() {
-  is_installed kubectl || exit 1
-  kubectl create namespace spike
-}
-
-function teardown() {
-  is_installed kubectl || exit 1
-  kubectl delete namespace spike
 }
 
 function help() {
@@ -119,48 +123,6 @@ function is_installed() {
     echo "${_command} is not installed" 1>&2
     return 1
   fi
-}
-
-# https://stackoverflow.com/questions/42873285/curl-retry-mechanism
-function get_http_status_of() {
-  url=${1?please provide the url a first argument}
-  _curl --retry-all-errors --retry 5 --retry-delay 0 \
-    --max-time 2 --retry-max-time 15 -w "%{http_code}" \
-    -O /dev/null "$url" | sed -e 's/0*//'
-    # the sed command is an ugly hack until I figure how to get the http_code of last request only
-}
-
-function sandbox() {
-  trap "teardown &>/dev/null" EXIT
-  ( setup || ( teardown && setup ) ) &>/dev/null
-}
-
-function when() {
-  _scope when "$*"
-}
-
-function it() {
-  # https://unix.stackexchange.com/a/438405
-  CHECK_MARK="\033[0;32m\xE2\x9C\x94\033[0m"
-  trap 'if [ $? == 0 ]; then echo -en " $CHECK_MARK"; else echo -e " \u2715"; fi' EXIT
-  _scope it "$*"
-}
-
-function expect_equals() {
-  expected=${1?please provide expected as the first argument}
-  actual=${2?please provide actual as the second argument}
-  (
-    trap 'if [ $? != 0 ]; then echo -n " >> expected ${expected} got ${actual}"; fi' EXIT
-    test "$expected" = "$actual"
-  )
-}
-
-OFFSET=( )
-function _scope() {
-  name="${1:?}"
-  shift
-  echo -en "\n${OFFSET[*]:-}[${name}] $*"
-  OFFSET+=("  ")
 }
 
 main "$@"
