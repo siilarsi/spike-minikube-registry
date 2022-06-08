@@ -16,6 +16,7 @@ function main() {
 }
 
 function _test() {
+  trap 'echo' EXIT
   (when "running the test suite"
     (it "requires that the used tools are installed"
       is_installed kubectl && is_installed minikube && is_installed jq
@@ -25,11 +26,9 @@ function _test() {
       expect_equals "minikube" "$(kubectl config current-context)"
     )
     (it "requires that minikube is running"
-      trap 'if [ $? != 0 ]; then echo "--FAILED minikube is not running"; fi' EXIT
       minikube status 1> /dev/null
     )
     (it "requires that the ingress addon is enabled"
-      trap 'if [ $? != 0 ]; then echo "--FAILED the ingress addon is disabled"; fi' EXIT
       minikube addons list | grep -e 'ingress.*enabled' 1>/dev/null
     )
   )
@@ -119,6 +118,9 @@ function when() {
 }
 
 function it() {
+  # https://unix.stackexchange.com/a/438405
+  CHECK_MARK="\033[0;32m\xE2\x9C\x94\033[0m"
+  trap 'if [ $? == 0 ]; then echo -en " $CHECK_MARK"; else echo -e " \u2715"; fi' EXIT
   _scope it "$*"
 }
 
@@ -126,7 +128,7 @@ function expect_equals() {
   expected=${1?please provide expected as the first argument}
   actual=${2?please provide actual as the second argument}
   (
-    trap 'if [ $? != 0 ]; then echo "--FAILED expected ${expected} got ${actual}"; fi' EXIT
+    trap 'if [ $? != 0 ]; then echo -n " >> expected ${expected} got ${actual}"; fi' EXIT
     test "$expected" = "$actual"
   )
 }
@@ -135,7 +137,7 @@ OFFSET=( )
 function _scope() {
   name="${1:?}"
   shift
-  echo "${OFFSET[*]:-}[${name}] $*"
+  echo -en "\n${OFFSET[*]:-}[${name}] $*"
   OFFSET+=("  ")
 }
 
