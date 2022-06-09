@@ -144,7 +144,7 @@ function get_http_status_of() {
 
 function deploy() {
   is_installed kubectl || exit 1
-  kubectl apply -f templates/
+  kubectl -n spike apply -k configuration/
 }
 
 function catalog() {

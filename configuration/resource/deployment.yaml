@@ -5,7 +5,6 @@ metadata:
   labels:
     app: registry
   name: registry
-  namespace: spike
 spec:
   replicas: 1
   selector:
@@ -24,8 +23,14 @@ spec:
         volumeMounts:
         - name: repository-volume
           mountPath: "/var/lib/registry"
+        - name: config-volume
+          mountPath: /etc/docker/registry/
         resources: {}
       volumes:
+      - name: config-volume
+        secret:
+          secretName: registry-config
+          optional: false
       - name: repository-volume
         persistentVolumeClaim:
           claimName: registry

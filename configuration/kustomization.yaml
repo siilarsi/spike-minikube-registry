@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+generatorOptions:
+  disableNameSuffixHash: true
+resources:
+- resource/deployment.yaml
+- resource/ingress.yaml
+- resource/persistentVolumeClaim.yaml
+- resource/service.yaml
+secretGenerator:
+- name: registry-config
+  files:
+  - config.yml
