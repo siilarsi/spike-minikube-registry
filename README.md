@@ -22,6 +22,26 @@ Some tools are required on the local machine:
 Minikube should already be running and your kubectl context should be set to
 using minikube.
 
+*Important* to remember is to enable the ingress addon in minikube.
+
+<details>
+<summary>Optionally enable ingress-dns addon</summary>
+
+Optionally the ingress-dns addon can be enabled as well, so that the hostname
+specified in the ingress deployed to minikube can be resolved from your local
+machine. But in order for that to work then you will have to [configure your
+machine to use the ingress-dns addon as a dns
+server](https://minikube.sigs.k8s.io/docs/handbook/addons/ingress-dns/#solution).
+
+Although for running the `run.sh` script that is not necessary as it relies
+exclusively on curl with an option to resolve the hostname specified in the
+ingress to the minikube IP.
+
+Admittedly if you want to use `docker` to push images to the registry without
+using the `./run.sh transfer` command, then using the ingress-dns addon is the
+better solution.
+</details>
+
 ### Instructions
 
 Clone the repository and run the `run.sh` script:
