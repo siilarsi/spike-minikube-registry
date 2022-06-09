@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 
+SOURCE_REGISTRY="localhost:5000"
+
 function setup() {
-  is_installed kubectl || exit 1
+  is_installed kubectl && is_installed docker || exit 1
   kubectl create namespace spike
+  if [ "$(curl -s -w "%{http_code}" http://${SOURCE_REGISTRY})" != 200 ]; then
+    docker run -d -p 5000:5000 --restart always --name registry registry:2
+  fi
 }
 
 function teardown() {
-  is_installed kubectl || exit 1
+  is_installed kubectl && is_installed docker || exit 1
   kubectl delete namespace spike
+  docker stop registry
+  docker rm registry
 }
+
 function sandbox() {
   trap "teardown &>/dev/null" EXIT
   ( setup || ( teardown && setup ) ) &>/dev/null

@@ -13,12 +13,13 @@ source "${SCRIPT_DIR}/test_utils.sh"
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck -x "$PROG"
 
-  case "${1-}" in
+  case "${1-help}" in
     "setup") setup;;
     "deploy") deploy;;
     "test") _test;;
     "teardown") teardown;;
     "transfer") transfer "${2-registry}" "${3-latest}";;
+    "catalog") catalog;;
     *) help;;
   esac
 }
@@ -27,7 +28,8 @@ function _test() {
   trap 'echo' EXIT
   (when "running the test suite"
     (it "requires that the used tools are installed"
-      is_installed kubectl && is_installed minikube && is_installed jq
+      is_installed kubectl && is_installed minikube \
+        && is_installed jq && is_installed docker && is_installed minikube
       expect_equals $? 0
     )
     (it "requires that kubectl is set to the right context"
@@ -66,7 +68,22 @@ function _test() {
 function transfer() {
   repo=${1?please provide repository as the first argument}
   tag=${2?please provide tag as the second argument}
-  echo "transferring $repo:$tag"
+  push_local "$repo" "$tag"
+  _transfer "$repo" "$tag"
+}
+
+function push_local() {
+  repo=${1?please provide repository as the first argument}
+  tag=${2?please provide tag as the second argument}
+  docker pull "${repo}:${tag}"
+  docker tag "${repo}:${tag}" "${SOURCE_REGISTRY}/${repo}:${tag}"
+  docker push "${SOURCE_REGISTRY}/${repo}:${tag}"
+}
+
+function _transfer() {
+  repo=${1?please provide repository as the first argument}
+  tag=${2?please provide tag as the second argument}
+  echo "transferring $repo:$tag from ${SOURCE_REGISTRY} to ${DESTINATION_REGISTRY}"
   manifest=$(_curl -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
     "http://${SOURCE_REGISTRY}/v2/${repo}/manifests/${tag}")
     echo "$manifest" | jq -r '.config.digest, .layers[].digest' \
@@ -80,6 +97,7 @@ function transfer() {
   echo "$manifest" \
   | _curl -H "content-type: application/vnd.docker.distribution.manifest.v2+json" \
     --data-binary "@-" -X PUT "http://${DESTINATION_REGISTRY}/v2/${repo}/manifests/${tag}"
+  echo "done"
 }
 
 function _curl() {
@@ -92,7 +110,7 @@ function get_http_status_of() {
   _curl --retry-all-errors --retry 5 --retry-delay 0 \
     --max-time 2 --retry-max-time 15 -w "%{http_code}" \
     -O /dev/null "$url" | sed -e 's/0*//'
-    # the sed command is an ugly hack until I figure how to get the http_code of last request only
+    # the sed command is an ugly hack until I figure how to get the http_code of last response only
 }
 
 function deploy() {
@@ -100,10 +118,14 @@ function deploy() {
   kubectl apply -f templates/
 }
 
+function catalog() {
+  _curl http://${DESTINATION_REGISTRY}/v2/_catalog
+}
+
 function help() {
   cat <<EOM
 USAGE
-  ./${PROG} [ test | setup | teardown | deploy | transfer ]
+  ./${PROG} [ test | setup | teardown | deploy | transfer | catalog ]
 
 COMMANDS
   test      run the test suite against the registry
@@ -114,6 +136,7 @@ COMMANDS
 
   deploy    deploy the registry => $(kubectl config current-context)
   transfer  transfer an image to the deployed registry
+  catalog   view the catalog of the deployed registry
 EOM
 }
 
