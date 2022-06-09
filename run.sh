@@ -46,7 +46,7 @@ function _test() {
   (sandbox
     (when "deploying the registry"
       deploy &>/dev/null
-      (it "should be possible to reach the base URL"
+      (it "should be ready within a few seconds"
         expected="200"
 
         actual=$(get_http_status_of "http://${DESTINATION_REGISTRY}/")
@@ -60,6 +60,35 @@ function _test() {
           | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"
+      )
+      (and "transferring an image to it"
+        transfer "registry" "latest" 1>/dev/null
+        (it "should contain one repository"
+         expected="1"
+
+          actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+            | jq '.repositories | length')
+
+          expect_equals "$expected" "$actual"
+        )
+      )
+      (and "deleting all of its pods"
+        kubectl -n spike delete pods --all 1>/dev/null
+        (it "should start up again within a few seconds"
+          expected="200"
+
+          actual=$(get_http_status_of "http://${DESTINATION_REGISTRY}/")
+
+          expect_equals "$expected" "$actual"
+        )
+        (it "should still contain one repository"
+          expected="1"
+
+          actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+            | jq '.repositories | length')
+
+          expect_equals "$expected" "$actual"
+        )
       )
     )
   )

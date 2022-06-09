@@ -26,6 +26,10 @@ function when() {
   _scope when "$*"
 }
 
+function and() {
+  _scope and "$*"
+}
+
 function it() {
   # https://unix.stackexchange.com/a/438405
   CHECK_MARK="\033[0;32m\xE2\x9C\x94\033[0m"

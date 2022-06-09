@@ -21,5 +21,13 @@ spec:
       containers:
       - image: registry:2
         name: registry
+        volumeMounts:
+        - name: repository-volume
+          mountPath: "/var/lib/registry"
         resources: {}
+      volumes:
+      - name: repository-volume
+        persistentVolumeClaim:
+          claimName: registry
+
 status: {}

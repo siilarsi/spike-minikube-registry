@@ -46,8 +46,11 @@ COMMANDS
 ### Test
 
 Running the tests `./run.sh test` will create a sandbox environment for the
-tests, by running a local docker registry on localhost:5000 and creating a
-namespace "spike" in minikube.
+tests, by running a docker registry on the host machine on localhost:5000 and
+creating a namespace "spike" in minikube.
+
+The docker registry on the host machine is used to transfer images to the
+docker registry running in minikube using the registry v2 API.
 
 It will then deploy the docker registry to the spike namespace, exposing it
 over an ingress with the host "registry.test".
