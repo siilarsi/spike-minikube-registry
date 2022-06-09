@@ -47,14 +47,15 @@ function _test() {
       (it "should be possible to reach the base URL"
         expected="200"
 
-        actual=$(get_http_status_of http://registry.test/)
+        actual=$(get_http_status_of "http://${DESTINATION_REGISTRY}/")
 
         expect_equals "$expected" "$actual"
       )
       (it "should not contain any repositories"
         expected="0"
 
-        actual=$(_curl http://registry.test/v2/_catalog | jq '.repositories | length')
+        actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+          | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"
       )
@@ -102,17 +103,17 @@ function deploy() {
 function help() {
   cat <<EOM
 USAGE
-  ./${PROG} [ setup | deploy | test ]
+  ./${PROG} [ test | setup | teardown | deploy | transfer ]
 
 COMMANDS
-  setup     setup the k8s registry environment
-  deploy    deploys the registry to k8s
   test      run the test suite against the registry
-  teardown  cleanup the k8s registry environment
-  transfer  transfer image from the host registry to the deployed minikube registry
+            can be run independently
 
-NOTE
-Your current kubectl context is "$(kubectl config current-context)"
+  setup     setup the test environment => $(kubectl config current-context)
+  teardown  cleanup the test environment
+
+  deploy    deploy the registry => $(kubectl config current-context)
+  transfer  transfer an image to the deployed registry
 EOM
 }
 
