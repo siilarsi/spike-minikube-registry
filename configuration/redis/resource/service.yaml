@@ -5,7 +5,6 @@ metadata:
   labels:
     app: redis
   name: redis
-  namespace: spike
 spec:
   ports:
   - port: 80
