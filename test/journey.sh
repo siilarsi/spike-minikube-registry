@@ -16,7 +16,7 @@ trap 'echo' EXIT
     expect_equals "minikube" "$(kubectl config current-context)"
   )
   (it "requires that minikube is running"
-    minikube status 1> /dev/null
+    minikube status &> /dev/null
   )
   (it "requires that the ingress addon is enabled"
     minikube addons list | grep -e 'ingress.*enabled' 1>/dev/null
