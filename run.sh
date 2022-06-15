@@ -11,6 +11,9 @@ source "${RUN_DIR}/api.sh"
 # shellcheck source=./test/lib.sh
 source "${RUN_DIR}/test/lib.sh"
 
+DESTINATION_REGISTRY="registry.test"
+SOURCE_REGISTRY="localhost:5000"
+
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck -x "$PROG"
   is_installed kubectl && is_installed minikube \
@@ -26,7 +29,7 @@ function main() {
       repo="${2-registry}"
       tag="${3-latest}"
       push_local "$repo" "$tag"
-      _transfer "$repo" "$tag"
+      transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "$repo" "$tag"
       ;;
     "catalog") catalog;;
     *) help;;

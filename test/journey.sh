@@ -10,6 +10,7 @@ source "${JOURNEY_DIR}/../lib.sh"
 # shellcheck source=./../api.sh
 source "${JOURNEY_DIR}/../api.sh"
 
+SOURCE_REGISTRY="localhost:5000"
 DESTINATION_REGISTRY="registry.test"
 
 trap 'echo' EXIT
@@ -45,7 +46,7 @@ trap 'echo' EXIT
     )
     (and "transferring an image to it"
       push_local "registry" "latest" 1>/dev/null
-      _transfer "registry" "latest" 1>/dev/null
+      transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "registry" "latest" 1>/dev/null
       (it "should contain one repository"
        expected="1"
 
