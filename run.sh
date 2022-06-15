@@ -6,6 +6,8 @@ PROG=${0##*/}
 RUN_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
 # shellcheck source=./lib.sh
 source "${RUN_DIR}/lib.sh"
+# shellcheck source=./api.sh
+source "${RUN_DIR}/api.sh"
 # shellcheck source=./test/lib.sh
 source "${RUN_DIR}/test/lib.sh"
 
@@ -20,7 +22,12 @@ function main() {
     "deploy") deploy_to custom-run;;
     "test") (cd "${RUN_DIR}/test/" && ./journey.sh);;
     "teardown") test.teardown custom-run;;
-    "transfer") transfer "${2-registry}" "${3-latest}";;
+    "transfer")
+      repo="${2-registry}"
+      tag="${3-latest}"
+      push_local "$repo" "$tag"
+      _transfer "$repo" "$tag"
+      ;;
     "catalog") catalog;;
     *) help;;
   esac

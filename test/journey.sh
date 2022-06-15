@@ -7,6 +7,8 @@ JOURNEY_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null &&
 source "${JOURNEY_DIR}/framework.sh"
 # shellcheck source=./../lib.sh
 source "${JOURNEY_DIR}/../lib.sh"
+# shellcheck source=./../api.sh
+source "${JOURNEY_DIR}/../api.sh"
 
 DESTINATION_REGISTRY="registry.test"
 
@@ -42,7 +44,8 @@ trap 'echo' EXIT
       expect_equals "$expected" "$actual"
     )
     (and "transferring an image to it"
-      transfer "registry" "latest" 1>/dev/null
+      push_local "registry" "latest" 1>/dev/null
+      _transfer "registry" "latest" 1>/dev/null
       (it "should contain one repository"
        expected="1"
 
