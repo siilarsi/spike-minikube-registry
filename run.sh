@@ -4,15 +4,14 @@ set -euo pipefail
 PROG=${0##*/}
 # https://stackoverflow.com/a/246128
 RUN_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
-# shellcheck source=./lib.sh
-source "${RUN_DIR}/lib.sh"
+# shellcheck source=./deploy.sh
+source "${RUN_DIR}/deploy.sh"
 # shellcheck source=./api.sh
 source "${RUN_DIR}/api.sh"
-# shellcheck source=./test/lib.sh
-source "${RUN_DIR}/test/lib.sh"
+# shellcheck source=./test/helpers.sh
+source "${RUN_DIR}/test/helpers.sh"
 
-DESTINATION_REGISTRY="registry.test"
-SOURCE_REGISTRY="localhost:5000"
+MINIKUBE_REGISTRY="registry.test"
 
 function main() {
   is_installed shellcheck 2>/dev/null && shellcheck -x "$PROG"
@@ -22,16 +21,16 @@ function main() {
 
   case "${1-help}" in
     "setup") test.setup custom-run;;
-    "deploy") deploy_to custom-run;;
+    "deploy") deploy.all_to custom-run;;
     "test") (cd "${RUN_DIR}/test/" && ./journey.sh);;
     "teardown") test.teardown custom-run;;
     "transfer")
-      repo="${2-registry}"
-      tag="${3-latest}"
-      push_local "$repo" "$tag"
-      transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "$repo" "$tag"
+      image="${2-foo:latest}"
+      test.build_test_image "$image"
+      test.push_image_to_local_repo "$image"
+      test.transfer_image "$image"
       ;;
-    "catalog") api.catalog "${DESTINATION_REGISTRY}";;
+    "catalog") api.catalog "$MINIKUBE_REGISTRY";;
     *) help;;
   esac
 }

@@ -5,13 +5,15 @@ set -euo pipefail
 JOURNEY_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
 # shellcheck source=./framework.sh
 source "${JOURNEY_DIR}/framework.sh"
-# shellcheck source=./../lib.sh
-source "${JOURNEY_DIR}/../lib.sh"
+# shellcheck source=./helpers.sh
+source "${JOURNEY_DIR}/helpers.sh"
 # shellcheck source=./../api.sh
 source "${JOURNEY_DIR}/../api.sh"
+# shellcheck source=./../deploy.sh
+source "${JOURNEY_DIR}/../deploy.sh"
 
-SOURCE_REGISTRY="localhost:5000"
-DESTINATION_REGISTRY="registry.test"
+MINIKUBE_REGISTRY="registry.test"
+TIMEOUT=15
 
 trap 'echo' EXIT
 (when "running the test suite"
@@ -28,29 +30,30 @@ trap 'echo' EXIT
 
 (sandbox
   (when "deploying the registry"
-    deploy_to sandbox &>/dev/null
-    (it "should be ready within a few seconds"
+    deploy.all_to sandbox &>/dev/null
+    (it "should be ready within $TIMEOUT seconds"
       expected="200"
 
-      actual=$(get_http_status_of "http://${DESTINATION_REGISTRY}/")
+      actual=$(test.retry_until "http://${MINIKUBE_REGISTRY}/" $TIMEOUT)
 
       expect_equals "$expected" "$actual"
     )
     (it "should not contain any repositories"
       expected="0"
 
-      actual=$(api.catalog "$DESTINATION_REGISTRY" \
+      actual=$(api.catalog "$MINIKUBE_REGISTRY" \
         | jq '.repositories | length')
 
       expect_equals "$expected" "$actual"
     )
     (and "transferring an image to it"
-      push_local "registry" "latest" 1>/dev/null
-      transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "registry" "latest" 1>/dev/null
+      test.build_test_image "foo:latest" 1>/dev/null
+      test.push_image_to_local_repo "foo:latest" 1>/dev/null
+      test.transfer_image "foo:latest" 1>/dev/null
       (it "should contain one repository"
         expected="1"
 
-        actual=$(api.catalog "$DESTINATION_REGISTRY" \
+        actual=$(api.catalog "$MINIKUBE_REGISTRY" \
           | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"
@@ -58,7 +61,7 @@ trap 'echo' EXIT
       (it "should be an image with one tag"
         expected="1"
 
-        actual=$(api.tags "$DESTINATION_REGISTRY" "registry" \
+        actual=$(api.tags "$MINIKUBE_REGISTRY" "foo" \
           | jq '.tags | length')
 
         expect_equals "$expected" "$actual"
@@ -66,17 +69,17 @@ trap 'echo' EXIT
     )
     (and "deleting all of its pods"
       kubectl -n spike delete pods --all 1>/dev/null
-      (it "should start up again within a few seconds"
+      (it "should start up again within $TIMEOUT seconds"
         expected="200"
 
-        actual=$(get_http_status_of "http://${DESTINATION_REGISTRY}/")
+        actual=$(test.retry_until "http://${MINIKUBE_REGISTRY}/" $TIMEOUT)
 
         expect_equals "$expected" "$actual"
       )
       (it "should still contain one repository"
         expected="1"
 
-        actual=$(api.catalog "$DESTINATION_REGISTRY" \
+        actual=$(api.catalog "$MINIKUBE_REGISTRY" \
           | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"

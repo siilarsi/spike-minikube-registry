@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 FRAMEWORK_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
-source "${FRAMEWORK_DIR}/lib.sh"
+source "${FRAMEWORK_DIR}/helpers.sh"
 
 function sandbox() {
   trap "test.teardown sandbox &>/dev/null" EXIT
