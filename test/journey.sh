@@ -39,7 +39,7 @@ trap 'echo' EXIT
     (it "should not contain any repositories"
       expected="0"
 
-      actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+      actual=$(api.catalog "$DESTINATION_REGISTRY" \
         | jq '.repositories | length')
 
       expect_equals "$expected" "$actual"
@@ -48,10 +48,18 @@ trap 'echo' EXIT
       push_local "registry" "latest" 1>/dev/null
       transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "registry" "latest" 1>/dev/null
       (it "should contain one repository"
-       expected="1"
+        expected="1"
 
-        actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+        actual=$(api.catalog "$DESTINATION_REGISTRY" \
           | jq '.repositories | length')
+
+        expect_equals "$expected" "$actual"
+      )
+      (it "should be an image with one tag"
+        expected="1"
+
+        actual=$(api.tags "$DESTINATION_REGISTRY" "registry" \
+          | jq '.tags | length')
 
         expect_equals "$expected" "$actual"
       )
@@ -68,7 +76,7 @@ trap 'echo' EXIT
       (it "should still contain one repository"
         expected="1"
 
-        actual=$(_curl "http://${DESTINATION_REGISTRY}/v2/_catalog" \
+        actual=$(api.catalog "$DESTINATION_REGISTRY" \
           | jq '.repositories | length')
 
         expect_equals "$expected" "$actual"

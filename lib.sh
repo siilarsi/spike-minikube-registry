@@ -31,7 +31,3 @@ function deploy_to() {
   namespace=${1?please provide namespace as the first argument}
   kubectl -n "$namespace" apply -k "${LIB_DIR}/configuration/"
 }
-
-function catalog() {
-  _curl http://${DESTINATION_REGISTRY}/v2/_catalog
-}

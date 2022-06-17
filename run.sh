@@ -31,7 +31,7 @@ function main() {
       push_local "$repo" "$tag"
       transfer_image "$SOURCE_REGISTRY" "$DESTINATION_REGISTRY" "$repo" "$tag"
       ;;
-    "catalog") catalog;;
+    "catalog") api.catalog "${DESTINATION_REGISTRY}";;
     *) help;;
   esac
 }
@@ -39,7 +39,7 @@ function main() {
 function help() {
   cat <<EOM
 USAGE
-  ./${PROG} [ test | setup | teardown | deploy | transfer | catalog ]
+  ./${PROG} [ test | setup | teardown | deploy | transfer | api ]
 
 COMMANDS
   test      run the test suite against the registry
