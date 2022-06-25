@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: null
+  name: image-retention
+spec:
+  template:
+    metadata:
+      creationTimestamp: null
+    spec:
+      containers:
+      - image: curlimages/curl
+        name: image-retention
+        command: ["curl", "-s", "registry/v2/_catalog"]
+        resources: {}
+      restartPolicy: Never
+status: {}

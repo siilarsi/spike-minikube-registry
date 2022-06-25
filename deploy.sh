@@ -7,3 +7,8 @@ function deploy.all_to() {
   namespace=${1?please provide namespace as the first argument}
   kubectl -n "$namespace" apply -k "${DEPLOY_DIR}/configuration/"
 }
+
+function deploy.image_retention_to() {
+  namespace=${1?please provide namespace as the first argument}
+  kubectl -n "$namespace" apply -k "${DEPLOY_DIR}/configuration/image-retention/"
+}
